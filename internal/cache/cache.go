@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -25,11 +26,13 @@ type LRUCache struct {
 	values      map[string]*node
 	m           *sync.Mutex
 	most, least *node
+	log         *slog.Logger
 }
 
 func New(
 	cacheSize uint,
 	ttl int64,
+	log *slog.Logger,
 ) (*LRUCache, error) {
 	if cacheSize == 0 {
 		return nil, ErrInvalidCacheSize
@@ -40,12 +43,14 @@ func New(
 		defaultTTL: ttl,
 		m:          &sync.Mutex{},
 		values:     make(map[string]*node),
+		log:        log,
 	}, nil
 }
 
 func (l *LRUCache) Put(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
 	select {
 	case <-ctx.Done():
+		l.log.Warn(ctx.Err().Error())
 		return ctx.Err()
 	default:
 	}
@@ -54,10 +59,15 @@ func (l *LRUCache) Put(ctx context.Context, key string, value interface{}, ttl t
 	defer l.m.Unlock()
 
 	if ttl == 0 {
+		l.log.Debug("default ttl applied", "key", key)
 		ttl = time.Duration(l.defaultTTL)
 	}
 
-	expiration := time.Now().Add(ttl)
+	now := time.Now()
+	expiration := now.Add(ttl)
+
+	l.log.Debug("node created/updated time", "key", key, "created time", now.Format(time.RFC1123))
+	l.log.Debug("node expiration time", "key", key, "expiration time", expiration.Format(time.RFC1123))
 
 	if nodeFound, ok := l.values[key]; !ok {
 		l.createNode(
@@ -68,11 +78,14 @@ func (l *LRUCache) Put(ctx context.Context, key string, value interface{}, ttl t
 				next:  l.most,
 				key:   key,
 			})
+		l.log.Debug("creating new node", "key", key)
 	} else {
 		nodeFound.value = value
 		nodeFound.ttl = expiration
 
 		l.updateNode(nodeFound)
+
+		l.log.Debug("node accessed, updated and moved to the front of LRU cache", "key", key)
 	}
 
 	return nil
@@ -84,23 +97,31 @@ func (l *LRUCache) Get(ctx context.Context, key string) (value interface{}, expi
 
 	select {
 	case <-ctx.Done():
+		l.log.Warn(ctx.Err().Error())
 		return nil, time.Time{}, ctx.Err()
 	default:
 	}
 
 	node, ok := l.values[key]
 	if !ok {
+		l.log.Warn(ErrKeyDoesNotExist.Error(), "key", key)
+
 		return nil, time.Time{}, ErrKeyDoesNotExist
 	}
 
 	if time.Now().After(node.ttl) {
 		l.evictNode(node)
+		l.log.Debug("node expired and has been evicted", "key", node.key)
+
 		return nil, time.Time{}, ErrKeyDoesNotExist
 	}
 
 	l.updateNode(node)
+	l.log.Debug("node accessed and moved to the front of LRU cache", "key", node.key)
 
 	value = node.value
+
+	expiresAt = node.ttl
 
 	return
 }
@@ -111,6 +132,7 @@ func (l *LRUCache) GetAll(ctx context.Context) (keys []string, values []interfac
 
 	select {
 	case <-ctx.Done():
+		l.log.Warn(ctx.Err().Error())
 		return nil, nil, ctx.Err()
 	default:
 	}
@@ -120,6 +142,7 @@ func (l *LRUCache) GetAll(ctx context.Context) (keys []string, values []interfac
 	for key, node := range l.values {
 		if now.After(node.ttl) {
 			l.evictNode(node)
+			l.log.Debug("node expired and has been evicted", "key", node.key)
 		} else {
 			keys = append(keys, key)
 			values = append(values, node.value)
@@ -134,18 +157,22 @@ func (l *LRUCache) Evict(ctx context.Context, key string) (value interface{}, er
 
 	select {
 	case <-ctx.Done():
+		l.log.Warn(ctx.Err().Error())
 		return nil, ctx.Err()
 	default:
 	}
 
 	node, ok := l.values[key]
 	if !ok {
+		l.log.Warn(ErrKeyDoesNotExist.Error(), "key", key)
+
 		return nil, ErrKeyDoesNotExist
 	}
 
 	value = node.value
 
 	l.evictNode(node)
+	l.log.Debug("node has been evicted", "key", node.key)
 
 	return
 }
@@ -156,6 +183,7 @@ func (l *LRUCache) EvictAll(ctx context.Context) error {
 
 	select {
 	case <-ctx.Done():
+		l.log.Warn(ctx.Err().Error())
 		return ctx.Err()
 	default:
 	}
@@ -167,6 +195,8 @@ func (l *LRUCache) EvictAll(ctx context.Context) error {
 	l.len = 0
 	l.most = nil
 	l.least = nil
+
+	l.log.Debug("cache successfully has been flushed")
 
 	return nil
 }
@@ -227,6 +257,7 @@ func (l *LRUCache) createNode(key string, node *node) {
 			leastPrev := l.least.prev
 
 			delete(l.values, l.least.key)
+			l.log.Debug("least used node has been evicted", "key", l.least.key)
 
 			l.least = leastPrev
 
