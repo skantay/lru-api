@@ -6,6 +6,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -39,21 +40,41 @@ func (s *Service) Put(ctx context.Context, key string, value interface{}, ttl ti
 	if key == "" {
 		return ErrInvalidKey
 	}
-	return s.cache.Put(ctx, key, value, ttl)
+	if err := s.cache.Put(ctx, key, value, ttl); err != nil {
+		return fmt.Errorf("failed to put into cache: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Service) Get(ctx context.Context, key string) (value interface{}, expiresAt time.Time, err error) {
-	return s.cache.Get(ctx, key)
+	if value, expiresAt, err = s.cache.Get(ctx, key); err != nil {
+		err = fmt.Errorf("failed to get from cache: %w", err)
+	}
+
+	return
 }
 
 func (s *Service) GetAll(ctx context.Context) (keys []string, values []interface{}, err error) {
-	return s.cache.GetAll(ctx)
+	if keys, values, err = s.cache.GetAll(ctx); err != nil {
+		err = fmt.Errorf("failed to get all from cache: %w", err)
+	}
+
+	return
 }
 
 func (s *Service) Evict(ctx context.Context, key string) (value interface{}, err error) {
-	return s.cache.Evict(ctx, key)
+	if value, err = s.cache.Evict(ctx, key); err != nil {
+		err = fmt.Errorf("failed to evict from cache: %w", err)
+	}
+
+	return
 }
 
 func (s *Service) EvictAll(ctx context.Context) error {
-	return s.EvictAll(ctx)
+	if err := s.cache.EvictAll(ctx); err != nil {
+		return fmt.Errorf("failed to evict all: %w", err)
+	}
+
+	return nil
 }
