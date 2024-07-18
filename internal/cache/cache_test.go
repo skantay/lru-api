@@ -61,7 +61,7 @@ func TestPut(t *testing.T) {
 		},
 	}
 
-	cache, err := New(2, 1000000000000, slog.New(
+	cache, err := New(2, time.Second*60, slog.New(
 		slog.NewTextHandler(
 			os.Stdout,
 			&slog.HandlerOptions{
@@ -187,7 +187,7 @@ func TestGet(t *testing.T) {
 		},
 	}
 
-	cache, err := New(1, 1000000000000, slog.New(
+	cache, err := New(1, time.Second*60, slog.New(
 		slog.NewTextHandler(
 			os.Stdout,
 			&slog.HandlerOptions{
@@ -211,7 +211,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetAll(t *testing.T) {
-	cache, err := New(2, 1000000000000, slog.New(
+	cache, err := New(2, time.Second*60, slog.New(
 		slog.NewTextHandler(
 			os.Stdout,
 			&slog.HandlerOptions{
@@ -274,7 +274,7 @@ func TestEvict(t *testing.T) {
 }
 
 func TestEvictAll(t *testing.T) {
-	cache, err := New(2, 1000000000000, slog.New(
+	cache, err := New(2, time.Second*60, slog.New(
 		slog.NewTextHandler(
 			os.Stdout,
 			&slog.HandlerOptions{

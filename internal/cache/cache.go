@@ -21,7 +21,7 @@ type node struct {
 }
 
 type LRUCache struct {
-	defaultTTL  int64
+	defaultTTL  time.Duration
 	len, cap    uint
 	values      map[string]*node
 	m           *sync.Mutex
@@ -31,7 +31,7 @@ type LRUCache struct {
 
 func New(
 	cacheSize uint,
-	ttl int64,
+	ttl time.Duration,
 	log *slog.Logger,
 ) (*LRUCache, error) {
 	if cacheSize == 0 {
@@ -60,14 +60,13 @@ func (l *LRUCache) Put(ctx context.Context, key string, value interface{}, ttl t
 
 	if ttl == 0 {
 		l.log.Debug("default ttl applied", "key", key)
-		ttl = time.Duration(l.defaultTTL)
+		ttl = l.defaultTTL
 	}
 
 	now := time.Now()
 	expiration := now.Add(ttl)
 
-	l.log.Debug("node created/updated time", "key", key, "created time", now.Format(time.RFC1123))
-	l.log.Debug("node expiration time", "key", key, "expiration time", expiration.Format(time.RFC1123))
+	l.log.Debug("node created/updated", "key", key, "created time", now.Format(time.RFC1123), "expiration time", expiration.Format(time.RFC1123))
 
 	if nodeFound, ok := l.values[key]; !ok {
 		l.createNode(
