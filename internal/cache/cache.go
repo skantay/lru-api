@@ -193,9 +193,7 @@ func (l *LRUCache) EvictAll(ctx context.Context) error {
 	default:
 	}
 
-	for key := range l.values {
-		delete(l.values, key)
-	}
+	l.values = make(map[string]*node)
 
 	l.len = 0
 	l.most = nil
