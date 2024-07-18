@@ -78,6 +78,7 @@ func main() {
 
 	log.Info("Starting server", "port", cfg.HTTPPort)
 	<-done
+	now := time.Now()
 	log.Info("Server stopped")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -86,6 +87,6 @@ func main() {
 	if err := server.Shutdown(ctx); err != nil {
 		log.Error("Server Shutdown Failed:", err)
 	} else {
-		log.Info("Server exited properly")
+		log.Info("Server exited properly", "shutdown duration", time.Since(now))
 	}
 }
