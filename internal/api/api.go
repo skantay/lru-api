@@ -72,6 +72,16 @@ func (a *api) create(w http.ResponseWriter, r *http.Request) {
 	var request createRequest
 
 	if err := json.Unmarshal(data, &request); err != nil {
+		a.log.Debug("bad request", "error", err.Error())
+
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	if request.Key == "" || request.Value == nil {
+		a.log.Debug("bad request", "key", request.Key, "value", request.Value)
+
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
