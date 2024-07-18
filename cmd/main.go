@@ -73,6 +73,11 @@ func main() {
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error("ListenAndServe: " + err.Error())
+
+			select {
+			case done <- syscall.SIGTERM:
+			default:
+			}
 		}
 	}()
 
