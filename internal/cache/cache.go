@@ -1,3 +1,4 @@
+// Package cache provides an implementation of a concurrent safe LRU cache with TTL support
 package cache
 
 import (
@@ -8,7 +9,10 @@ import (
 )
 
 var (
-	ErrKeyDoesNotExist  = errors.New("key does not exist")
+	// Error for events when key does not exist, or was not found
+	ErrKeyDoesNotExist = errors.New("key does not exist")
+
+	// Error for an event when initalizing the cache user passes invalid cache size, e.g. cacheSize = 0
 	ErrInvalidCacheSize = errors.New("invalid cache size")
 )
 
@@ -26,15 +30,20 @@ type node struct {
 	ttl        time.Time
 }
 
+// LRUCache implements a concurrent safe LRU cache with TTL support.
 type LRUCache struct {
 	defaultTTL  time.Duration
 	len, cap    uint
 	values      map[string]*node
 	m           *sync.Mutex
 	most, least *node
-	log         logger
+
+	// Decided to inject an abstraction, not an implementation
+	// It will be much easier to test
+	log logger
 }
 
+// New creates a new instance of LRUCache with the specified cache size, TTL, and logger.
 func New(
 	cacheSize uint,
 	ttl time.Duration,
@@ -53,6 +62,8 @@ func New(
 	}, nil
 }
 
+// Put inserts or updates a node/item.
+// If ttl == 0, then default TTL is applied
 func (l *LRUCache) Put(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
 	select {
 	case <-ctx.Done():
@@ -96,6 +107,8 @@ func (l *LRUCache) Put(ctx context.Context, key string, value interface{}, ttl t
 	return nil
 }
 
+// Get retrieves a node/item by a specific key.
+// If node/item was not found, then it returns ErrKeyDoesNotExist
 func (l *LRUCache) Get(ctx context.Context, key string) (value interface{}, expiresAt time.Time, err error) {
 	l.m.Lock()
 	defer l.m.Unlock()
@@ -131,6 +144,7 @@ func (l *LRUCache) Get(ctx context.Context, key string) (value interface{}, expi
 	return
 }
 
+// Get retrieves all nodes/items from cache.
 func (l *LRUCache) GetAll(ctx context.Context) (keys []string, values []interface{}, err error) {
 	l.m.Lock()
 	defer l.m.Unlock()
@@ -156,6 +170,9 @@ func (l *LRUCache) GetAll(ctx context.Context) (keys []string, values []interfac
 
 	return
 }
+
+// Evict deletes a node/item from cache by a specific key.
+// If node/item was not found, then it returns ErrKeyDoesNotEXist
 func (l *LRUCache) Evict(ctx context.Context, key string) (value interface{}, err error) {
 	l.m.Lock()
 	defer l.m.Unlock()
@@ -182,6 +199,7 @@ func (l *LRUCache) Evict(ctx context.Context, key string) (value interface{}, er
 	return
 }
 
+// EvictAll flushes the cache.
 func (l *LRUCache) EvictAll(ctx context.Context) error {
 	l.m.Lock()
 	defer l.m.Unlock()

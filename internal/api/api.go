@@ -1,3 +1,5 @@
+// Package api provides an HTTP server for interacting with an LRU cache.
+// The server supports CRUD operations on the cache via an API.
 package api
 
 import (
@@ -31,9 +33,11 @@ type ILRUCache interface {
 
 type api struct {
 	cache ILRUCache
-	log   *slog.Logger
+
+	log *slog.Logger
 }
 
+// New creates a new API server with the provided LRU cache and logger.
 func New(ILRUCache ILRUCache, log *slog.Logger) http.Handler {
 	api := &api{
 		cache: ILRUCache,
@@ -63,6 +67,7 @@ type createRequest struct {
 	TTLSeconds uint        `json:"ttl_seconds"`
 }
 
+// create handles a creation of a new node/item in cache
 func (a *api) create(w http.ResponseWriter, r *http.Request) {
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -109,6 +114,7 @@ type getResponse struct {
 	ExpiresAt int64       `json:"expires_at"`
 }
 
+// get handles a retrieval of a node/item from cache
 func (a *api) get(w http.ResponseWriter, r *http.Request) {
 	key := chi.URLParam(r, "key")
 	a.log.Debug(key)
@@ -151,6 +157,7 @@ type getAllResponse struct {
 	Values []interface{} `json:"values"`
 }
 
+// getAll handles a retrieval of all nodes/items from cache
 func (a *api) getAll(w http.ResponseWriter, r *http.Request) {
 	keys, values, err := a.cache.GetAll(r.Context())
 	if err != nil {
@@ -186,6 +193,7 @@ func (a *api) getAll(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+// delete handles a deletion of a node/item in cache
 func (a *api) delete(w http.ResponseWriter, r *http.Request) {
 	key := chi.URLParam(r, "key")
 	a.log.Debug(key)
@@ -201,6 +209,7 @@ func (a *api) delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// flush handles a deletion of all nodes/items in cache
 func (a *api) flush(w http.ResponseWriter, r *http.Request) {
 	if err := a.cache.EvictAll(r.Context()); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

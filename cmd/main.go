@@ -21,7 +21,7 @@ func main() {
 	if err != nil {
 		slog.Error(err.Error())
 
-		return
+		os.Exit(1)
 	}
 
 	var level slog.Level
@@ -54,7 +54,7 @@ func main() {
 	if err != nil {
 		log.Error(err.Error())
 
-		return
+		os.Exit(1)
 	}
 
 	handler := api.New(cache, log)
@@ -79,13 +79,13 @@ func main() {
 	log.Info("Starting server", "port", cfg.HTTPPort)
 	<-done
 	now := time.Now()
-	log.Info("Server stopped")
+	log.Info("Server is shutting down...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Error("Server Shutdown Failed:", err)
+		log.Error("Server Shutdown Failed", "error", err.Error())
 	} else {
 		log.Info("Server exited properly", "shutdown duration", time.Since(now))
 	}

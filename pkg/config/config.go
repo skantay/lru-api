@@ -1,3 +1,7 @@
+// Package config provides a configuration mechanism for the application with specific policies.
+// The configuration is loaded from environment variables
+// and can be overridden by command-line flags
+// If non of the sources of config containes any variables, then default variables are applied
 package config
 
 import (
@@ -6,6 +10,7 @@ import (
 	"github.com/caarlos0/env"
 )
 
+// Dedicated config struct for lru-api
 type Config struct {
 	HTTPPort        string `env:"HTTP_PORT" envDefault:"8080"`
 	CacheSize       uint   `env:"CACHE_SIZE" envDefault:"10"`
@@ -13,6 +18,7 @@ type Config struct {
 	LogLevel        string `env:"LOG_LEVEL" envDefault:"WARN"`
 }
 
+// LoadConfig loads the configuration from environment variables.
 func LoadConfig() (*Config, error) {
 	httpPort := flag.String("server-host-port", "", "HTTP port")
 	cacheSize := flag.Uint("cache-size", 0, "Cache size")
