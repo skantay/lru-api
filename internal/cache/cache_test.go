@@ -2,11 +2,10 @@ package cache
 
 import (
 	"context"
-	"log/slog"
-	"os"
 	"testing"
 	"time"
 
+	"github.com/skantay/lru-api/internal/cache/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -61,14 +60,7 @@ func TestPut(t *testing.T) {
 		},
 	}
 
-	cache, err := New(2, time.Second*60, slog.New(
-		slog.NewTextHandler(
-			os.Stdout,
-			&slog.HandlerOptions{
-				Level: slog.LevelDebug,
-			},
-		),
-	))
+	cache, err := New(2, time.Second*60, &mocks.Logger{})
 	assert.NoError(t, err)
 
 	for _, test := range tests {
@@ -187,14 +179,7 @@ func TestGet(t *testing.T) {
 		},
 	}
 
-	cache, err := New(1, time.Second*60, slog.New(
-		slog.NewTextHandler(
-			os.Stdout,
-			&slog.HandlerOptions{
-				Level: slog.LevelDebug,
-			},
-		),
-	))
+	cache, err := New(1, time.Second*60, &mocks.Logger{})
 	assert.NoError(t, err)
 
 	for _, test := range tests {
@@ -211,14 +196,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetAll(t *testing.T) {
-	cache, err := New(2, time.Second*60, slog.New(
-		slog.NewTextHandler(
-			os.Stdout,
-			&slog.HandlerOptions{
-				Level: slog.LevelDebug,
-			},
-		),
-	))
+	cache, err := New(2, time.Second*60, &mocks.Logger{})
 	assert.NoError(t, err)
 
 	err = cache.Put(context.Background(), "key 1", 1, 1000000)
@@ -244,14 +222,7 @@ func TestGetAll(t *testing.T) {
 }
 
 func TestEvict(t *testing.T) {
-	cache, err := New(2, 1000000000000, slog.New(
-		slog.NewTextHandler(
-			os.Stdout,
-			&slog.HandlerOptions{
-				Level: slog.LevelDebug,
-			},
-		),
-	))
+	cache, err := New(2, 1000000000000, &mocks.Logger{})
 	assert.NoError(t, err)
 
 	value, err := cache.Evict(context.Background(), "key 1")
@@ -274,14 +245,7 @@ func TestEvict(t *testing.T) {
 }
 
 func TestEvictAll(t *testing.T) {
-	cache, err := New(2, time.Second*60, slog.New(
-		slog.NewTextHandler(
-			os.Stdout,
-			&slog.HandlerOptions{
-				Level: slog.LevelDebug,
-			},
-		),
-	))
+	cache, err := New(2, time.Second*60, &mocks.Logger{})
 	assert.NoError(t, err)
 
 	err = cache.Put(context.Background(), "key 1", 1, 1000000)

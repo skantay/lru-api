@@ -3,7 +3,6 @@ package cache
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"sync"
 	"time"
 )
@@ -12,6 +11,13 @@ var (
 	ErrKeyDoesNotExist  = errors.New("key does not exist")
 	ErrInvalidCacheSize = errors.New("invalid cache size")
 )
+
+type logger interface {
+	Debug(msg string, args ...any)
+	Warn(msg string, args ...any)
+	Info(msg string, args ...any)
+	Error(msg string, args ...any)
+}
 
 type node struct {
 	prev, next *node
@@ -26,13 +32,13 @@ type LRUCache struct {
 	values      map[string]*node
 	m           *sync.Mutex
 	most, least *node
-	log         *slog.Logger
+	log         logger
 }
 
 func New(
 	cacheSize uint,
 	ttl time.Duration,
-	log *slog.Logger,
+	log logger,
 ) (*LRUCache, error) {
 	if cacheSize == 0 {
 		return nil, ErrInvalidCacheSize
