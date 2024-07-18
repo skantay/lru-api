@@ -58,6 +58,15 @@ func TestPut(t *testing.T) {
 				ttl:   0,
 			},
 		},
+		{
+			name: "#5: update a node that was not recently used",
+			args: args{
+				ctx:   context.Background(),
+				key:   "key 2",
+				value: 3,
+				ttl:   0,
+			},
+		},
 	}
 
 	cache, err := New(2, time.Second*60, &mocks.Logger{})
@@ -176,6 +185,15 @@ func TestGet(t *testing.T) {
 			},
 			expectedValue: nil,
 			expectedErr:   ErrKeyDoesNotExist,
+		},
+		{
+			name: "#7: get key 1",
+			args: args{
+				ctx: context.Background(),
+				key: "key 1",
+			},
+			expectedValue: 1,
+			expectedErr:   nil,
 		},
 	}
 
