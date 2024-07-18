@@ -46,7 +46,6 @@ func New(ILRUCache ILRUCache, log *slog.Logger) http.Handler {
 
 	router := chi.NewMux()
 
-	router.Use(middleware.RequestID)
 	router.Use(api.logger)
 	router.Use(middleware.Recoverer)
 
