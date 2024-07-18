@@ -6,7 +6,7 @@
 go run ./cmd
 ```
 
-Available flags, also you can create `.env` with the same variables.
+Available flags, also you can define them in `.env` file.
 
 - `HTTP_PORT`: Specifies the HTTP port for the server to listen on. Default is 8080.
 - `CACHE_SIZE`: Sets the maximum size of the cache. Default is 10.
