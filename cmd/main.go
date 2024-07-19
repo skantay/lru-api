@@ -82,8 +82,8 @@ func main() {
 	}()
 
 	log.Info("Starting server", "port", cfg.HTTPPort)
-	<-done
 	now := time.Now()
+	log.Info("Signal is captured", "signal", <-done)
 	log.Info("Server is shutting down...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
